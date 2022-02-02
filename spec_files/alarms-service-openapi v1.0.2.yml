@@ -1,1 +1,295 @@
 
+swagger: "2.0"
+info:
+  description: 
+    $ref: "../md_files/README.md"
+  version: "0.3.1"
+  title: "Alarm Service"
+host: "example.com"
+basePath: "/api/alarms/"
+tags:
+- name: "events"
+  description: "Alarm transitions"
+- name: "alarms"
+  description: "Alarm transition events"
+schemes:
+- "https"
+paths:
+  /events:
+    get:
+      tags:
+      - "events"
+      summary: "Get alarm event transitions"
+      description: ""
+      operationId: "getEvents"
+      security:
+       - api_key: []
+      parameters:
+      - name: "lastUpdate"
+        in: "query"
+        type: "integer"
+        description: the starting index which to query the alarms log from. 
+      - name: "limit"
+        in: "query"
+        type: "integer"
+        description: "maximum results to return"
+        default: 100
+        maximum: 100
+        minimum: 1
+      - name: "wait"
+        description: "block the query for up to 30 seconds while waiting for the next alarm transition"
+        in: "query"
+        type: "boolean"
+        default: false
+        
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "ok"
+        "401":
+          description: "unauthorized"
+      
+    post:
+      tags:
+      - "events"
+      summary: "Apply an alarm transition event"
+      description: ""
+      operationId: "applyEvents"
+      security:
+       - api_key: []
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "alarm event to be applied"
+        required: true
+        schema:
+          $ref: "#/definitions/Event"
+      responses:
+        "200":
+          description: "ok"
+        "401":
+          description: "unauthorized"
+        "400":
+          description: "invalid request"
+              
+  /events/resolve:
+    put:
+      tags:
+      - "events"
+      summary: "Resolve events"
+      description: "Resolve multiple alarms at once, used from a user interface.  \n Service will generate a resolved event"
+      operationId: "resolveEvents"
+      produces:
+      - "application/json"
+      security:
+       - api_key: []
+      parameters:
+      - name: "body"
+        in: "body"
+        description: "array of eventids"
+        required: true
+        schema:
+          type: "array"
+          example:
+            ["automationserver1/rtu-1/temperature|def1fd4a-a2be-41cf-93eb-167a0b97fca8"]
+          items:
+            type: "string"
+              
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: '#/definitions/Result'
+        "400":
+          description: "invalid request"
+        "401":
+          description: "unauthorised"
+          
+  /events/acknowledge:
+    put:
+      tags:
+      - "events"
+      summary: "Acknowledge events"
+      description: "Acknowledge multiple alarms at once, used from a user interface.  \n Service will either forward the acknowledgement or apply it internally depending on the lifecycle"
+      operationId: "acknowledgeEvents"
+      security:
+       - api_key: []
+      produces:
+      - "application/json"
+      parameters:
+      - name: "body"
+        in: "body"
+        description: "array of eventids"
+        required: true
+        schema:
+          type: "array"
+          example:
+            ["demo:events/alarms/def1fd4a-a2be-41cf-93eb-167a0b97fca8"]
+          items:
+            type: "string"
+              
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: '#/definitions/Result'
+        "400":
+          description: "invalid request"
+        "401":
+          description: "unauthorised"
+          
+  /alarms:
+    get:
+      tags:
+      - "alarms"
+      summary: "Return the current alarms that are not in a normal state"
+      description: "Return all alarms that are not in a normal state"
+      operationId: "alarmsCurrent"
+      security:
+       - api_key: []
+      produces:
+      - "application/json"
+      
+      responses:
+        "200":
+          description: "array of events"
+          schema:
+            $ref: '#/definitions/ApiResponse'
+
+securityDefinitions:
+  api_key:
+    type: "apiKey"
+    name: "api_key"
+    in: "header"
+definitions:
+  Result:
+    type: "object"
+    required: 
+      - id
+      - success
+    properties:
+      id:
+        type: "string"
+        example: "demo:events/alarms/def1fd4a-a2be-41cf-93eb-167a0b97fca8"
+        description: "the eventid of the alarm event"
+      success:
+        type: "boolean"
+        description: "result of the operation"
+        example: false
+      reason:
+        type: "string"
+        example: "Event already resolved"
+        description: "the reason for failure"
+        
+  ApiResponse:
+    type: "object"
+    properties:
+      error:
+        type: "string"
+        example: "invalid id | null"
+      events:
+        type: "array"
+        items:
+          $ref: '#/definitions/Event'
+      lastUpdate:
+        type: 'integer'
+        description: "the latest alarm index"
+        example: 23232
+  Event:
+    type: "object"
+    required:
+    - "eventId"
+    - "state"
+    - "sourceid"
+    - "sourceId"
+    - "canAcknowledge"
+    - "canResolve"
+    - "category"
+    - "occurrence"
+    - "transition"
+    - "message" 
+    properties:
+      eventId:
+        type: "string"
+        example: "demo:events/alarms/def1fd4a-a2be-41cf-93eb-167a0b97fca8"
+        description: "Unique id that references this alarm transition event.  Primarily used for acknowledgement"
+      state:
+        type: "integer"
+        example: 1
+        # enum: [Invalid=0, Active=1, Acknowledged=2, Reset=3, Normal=4]
+        description: "The state of the alarm transition event"
+      sourceId:
+        type: "string"
+        example: "demo:controlsystems/ebo4212/00/Servers/AS43/AHU 4/Zone 3/AHU4Zone3Alm"
+        description: "The fully qualified name of the alarm in the subsystem.  Used to identify individual alarms"
+      valueId:
+        type: "string"
+        example: "demo:controlsystems/ebo4212/00/Servers/AS43/AHU 4/Zone 3/AHU4Zone3Tmp"
+        description: "The fully qualified name of the value being monitored.  Used to identify additional metadata"
+      sourceName:
+        type: "string"
+        example: "AHU4Zone3Tmp"
+        description: "A short name of the alarm.  Usually the monitored control point name"
+      canAcknowledge:
+        type: "boolean"
+        default: "false"
+        description: "If the alarm can be acknowledged.  Depends on the lifecycle and the control system"
+      canResolve:
+        type: "boolean"
+        default: "false"
+        description: "If the alarm can be forcibly resolved, ignoring the state in the control system"
+      occurred:
+        type: "string"
+        format: "Time RFC3339"
+        default: "now()"
+        description: "The time of the alarm occurrence, supplied by the control system"
+        example: "2016-02-04T12:06:01Z00:00"
+      transition:
+        type: "string"
+        default: "now()"
+        format: "Time RFC3339"
+        description: "The time of this alarm transition, supplied by the control system"
+        example: "2016-02-04T12:06:01Z00:00"
+      resolved:
+        type: "string"
+        format: "Time RFC3339"
+        description: "The time that the alarm was resolved, supplied by the control system"
+        example: "2016-02-04T12:06:01Z00:00"
+      received:
+        type: "string"
+        format: "Time RFC3339"
+        description: "The time that the alarm was received by the platform, supplied by the Alarm Service"
+        example: "2016-02-04T12:06:01Z00:00"
+      message:
+        type: "string"
+        example: "AHU 4 - Zone 3 - Temperature (27C) above threshold (25C)"
+        description: "Message is a description of the alarm event.  Provided by the control system."
+      lifecycle:
+        type: "integer"
+        # enum: [Unmanaged=0, ManagedAck=1, ManagedReset=2, ManagedAckRst=3]
+        example: 0
+      equipmentId:
+        type: "string"
+        example: "e373845d-7366-40d7-b7ba-db770449ed73"
+        description: "The unique identifier of the equipment in alarm"
+      equipmentLabel:
+        type: "string"
+        example: "RTU-1"
+        description: "The label of the equipment in alarm"
+      locationId:
+        type: "string"
+        example: "831b5aa8-f9ca-451c-ba4f-a8e04536d56c"
+        description: "The unique identifier of the location in alarm"
+      locationLabel:
+        type: "string"
+        example: "Building 44"
+        description:  "The label of the location in alarm"
