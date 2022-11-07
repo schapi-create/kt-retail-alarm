@@ -99,6 +99,12 @@ Can acknowledge indicates whether the alarm can be acknowledged by the operator.
 
 The alarms from subsystem can get stuck in certain conditions. For example, if an alarm has been activated, then the subsystem is decomissioned - a reset alarm event may never be generated. In this scenario, an operator must manually resolve the alarm state. Typically this is reserved for operators with high level of permissions.
 
+#Code Samples
+
+## Examples
+ 
+ https://github.com/ecostruxure-openapi/devportal-test
+
 # Developer Guide
 
 ## How to sign up for the API
