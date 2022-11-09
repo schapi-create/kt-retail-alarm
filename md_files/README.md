@@ -99,12 +99,6 @@ Can acknowledge indicates whether the alarm can be acknowledged by the operator.
 
 The alarms from subsystem can get stuck in certain conditions. For example, if an alarm has been activated, then the subsystem is decomissioned - a reset alarm event may never be generated. In this scenario, an operator must manually resolve the alarm state. Typically this is reserved for operators with high level of permissions.
 
-# Code Samples
-
-## Examples
- 
- https://github.com/ecostruxure-openapi/devportal-test
-
 # Developer Guide
 
 ## How to sign up for the API
@@ -133,6 +127,13 @@ This API requires 3 keys to authenticate and allow access to the API.
 3. Integrated Management Platform API Account Key
 
    This code should be included in the `rimpAPIKey` HTTP Header.
+   
+   
+## Code Samples
+
+### Examples
+ 
+ <a href="https://github.com/ecostruxure-openapi/devportal-test" target="_blank">https://github.com/ecostruxure-openapi/devportal-test</a>
 
 ## Response Codes
 
